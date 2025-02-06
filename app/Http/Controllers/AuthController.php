@@ -35,9 +35,9 @@ class AuthController extends Controller
                     DB::commit();
 
                     return response()->json([
-                        'token' => $token,
-                        'dev' => $user
-                    ], 200);
+                        'status' => "success",
+                       'token' => $token,
+                   ], 200);
                 }
                 else {
                     $token = $user->createToken('UserToken')->plainTextToken;
@@ -45,9 +45,9 @@ class AuthController extends Controller
                     DB::commit();
 
                     return response()->json([
-                        'token' => $token,
-                        'user' => $user
-                    ], 200);
+                        'status' => "success",
+                       'token' => $token,
+                   ], 200);
                 }
             }
 
@@ -58,21 +58,17 @@ class AuthController extends Controller
                 DB::commit();
 
                 return response()->json([
+                     'status' => "success",
                     'token' => $token,
-                    'admin' => $admin
                 ], 200);
             }
-
-            DB::rollBack();
-            return response()->json(['error' => 'Invalid credentials'], 401);
-
         }catch (ValidationException $e) {
             {
                 DB::rollback();
                 return response()->json([
-                    'error' => 'Validation failed',
+                    'status' => 'invalid',
                     'message' => $e->errors()
-                ] , 401);
+                ] , status: 401);
 
             }
         }catch (\Exception $e) {
@@ -91,7 +87,7 @@ class AuthController extends Controller
             }
             Auth::user()->currentAccessToken()->delete();
 
-            return response()->json(['success' => 'bisa boyy'], 200);
+            return response()->json(['success' => 'success'], 200);
         }
         catch (\Exception $e) {
            Log::error('Logout Failed' > $e->getMessage());
@@ -122,16 +118,17 @@ class AuthController extends Controller
         DB::commit();
 
         return response()->json([
-            'token' => $token,
-            'user' => $user
-        ], 201);
+            'status' => "success",
+           'token' => $token,
+       ], 200);
        }
        catch (ValidationException $e) {
             DB::rollBack();
             return response()->json([
-                'error' => 'Validation failed',
-                'message' => $e->errors()
-            ], 401);
+                'status' => 'invalid',
+                'message' => "Wrong username or password"
+            ] , status: 401);
+
 
        } catch (\Exception $e) {
             DB::rollback();

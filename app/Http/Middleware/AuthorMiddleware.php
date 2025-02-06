@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Game;
 use Auth;
 use Closure;
 use Illuminate\Http\Request;
@@ -29,15 +30,20 @@ class AuthorMiddleware
                 'message' => 'Token tidak disertakan.'
             ], 400);
         }
-
+        $userId = Auth::guard('dev-api')->user()->id;
+        $game = Game::where('created_by' , $userId)->exists();
         // Lakukan pengecekan apakah token valid dan sesuai dengan guard 'admin-api'
         if (Auth::guard('dev-api')->check()) {
-            return $next($request);
+            if(!$game)
+            {
+                return $next($request);
+            }
+
         }
 
         return response()->json([
             'status' => 'forbidden',
-            'message' => 'Anda bukan administrator.'
+            'message' => 'you are not the game author.'
         ], 403);
     }
 

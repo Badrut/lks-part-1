@@ -42,13 +42,13 @@ class AdministratorController extends Controller
 
         DB::commit();
 
-        return response()->json(['data' => $user], 201);
+        return response()->json(['status' => 'success' , 'username' => $user->username], 201);
       }
 
       catch (ValidationException $e){
         return response()->json([
             'status' => 'invalid',
-            'message' => $e->errors(),
+            'message' => 'Username already exists',
             ] , 400);
       }
       catch (\Exception $e){
@@ -79,8 +79,8 @@ class AdministratorController extends Controller
        {
         DB::rollBack();
         return response()->json([
-            'error' => 'Validation failed',
-            'message' => $e->errors()
+            'status' => 'invalid',
+            'message' => 'Username already exists',
             ], 400);
        }catch(\Exception $e)
        {
@@ -103,4 +103,6 @@ class AdministratorController extends Controller
             return response()->json(['status' => 'not found' , 'message' => 'User not found'], 403);
         }
     }
+
+
 }

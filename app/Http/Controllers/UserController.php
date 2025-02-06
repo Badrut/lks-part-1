@@ -13,8 +13,18 @@ class UserController extends Controller
         try {
             $user = User::all();
             $totalElements = count($user);
+            $data = [];
 
-            return response()->json(['totalElements' => $totalElements , 'data' => $user], 200);
+            foreach ($user as $u) {
+
+                $data[] = [
+                    'username' => $u->username,
+                    'last_login_at' => $u->last_login_at,
+                    'created_at' => $u->created_at,
+                    'updated_at' => $u->updated_at,
+                ];
+            }
+            return response()->json(['totalElements' => $totalElements , 'content' => $data], 200);
 
         }
         catch (\Exception $e) {

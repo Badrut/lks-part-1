@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('username')->unique();
             $table->string('password');
             $table->timestamps();
+            $table->timestamp('last_login_at')->nullable();
             $table->softDeletes();
             $table->string('delete_reason')->nullable();
         });
