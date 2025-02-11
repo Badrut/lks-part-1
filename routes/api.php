@@ -23,11 +23,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('v1/auth/signout', [AuthController::class, 'SignOut']);
     Route::post('v1/games', [GameController::class, 'store']);
     Route::get('v1/games', [GameController::class, 'index']);
-    Route::get('/game/{slug}', [GameController::class, 'show']);
+    Route::get('v1/game/{slug}', [GameController::class, 'show']);
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/v1/games/{slug}/scores', [ScoreController::class, 'index']);
     Route::post('/v1/games/{slug}/scores', [ScoreController::class, 'store']);
-
     Route::get('v1/users/{username}', [GameController::class, 'author']);
 
 });
@@ -37,12 +36,14 @@ Route::middleware(AdminMiddleware::class)->group(function () {
     Route::post('v1/users', [AdministratorController::class, 'store']);
     Route::get('v1/users', [UserController::class, 'index']);
     Route::put('v1/users/{id}', [AdministratorController::class, 'update']);
-    Route::delete('v1/users/{id}', [AdministratorController::class, 'delete']);
+    Route::delete('v1/users/{username}', [AdministratorController::class, 'delete']);
+    Route::get('/v1/users/unblock' , [AdministratorController::class, 'unblock']);
+    Route::post('v1/users/{username}', [AdministratorController::class, 'undelete']);
 
 
 });
 
 Route::middleware(AuthorMiddleware::class)->group(function () {
     Route::put('v1/games/{slug}', [GameController::class, 'update']);
-
+    Route::post('/v1/games/{slug}/upload', [GameController::class, 'upload']);
 });

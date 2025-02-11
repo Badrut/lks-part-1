@@ -11,7 +11,7 @@ class UserController extends Controller
     public function index()
     {
         try {
-            $user = User::all();
+            $user = User::withTrashed()->get();
             $totalElements = count($user);
             $data = [];
 
@@ -22,6 +22,7 @@ class UserController extends Controller
                     'last_login_at' => $u->last_login_at,
                     'created_at' => $u->created_at,
                     'updated_at' => $u->updated_at,
+                    'deleted_at' => $u->deleted_at,
                 ];
             }
             return response()->json(['totalElements' => $totalElements , 'content' => $data], 200);
@@ -31,5 +32,10 @@ class UserController extends Controller
             Log::error('Failed to fetch users' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    public function block($id)
+    {
+
     }
 }

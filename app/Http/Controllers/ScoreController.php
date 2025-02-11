@@ -10,32 +10,27 @@ use Illuminate\Validation\ValidationException;
 
 class ScoreController extends Controller
 {
-    public function index(Request $request  , $slug)
-    {
-        $game = Game::with('users','game_version.score')->where('slug' , $slug)->get();
-        // dd($game);
-        $scores = [];
+    public function index(Request $request, $slug)
+{
+    $game = Game::with('users', 'game_version.score')->where('slug', $slug)->first();
 
-
-
-        foreach($game as $gameVersion)
-        {
-            // dd($gameVersion->game_version->score);
-            // $username = $gameVersion->users->first()->username;
-            // $score = $gameVersion->game_version->score->get()->score;
-            // $timetamp = $gameVersion->game_version->score->first()->created_at;
-            $scores[] = [
-                'username' => $gameVersion->users->first()->username,
-                'score' => $gameVersion->game_version->score->first()->score,
-                'timetamp' => $gameVersion->game_version->score->first()->created_at,
-            ];
-
-        }
-
-        return response()->json(['scores' => $scores], 200);
-
-
+    if (!$game) {
+        return response()->json(['message' => 'Game not found'], 404);
     }
+
+    $scores = [];
+    foreach ($game->game_version as $version) {
+        foreach ($version->score as $scoreModel) {
+            $scores[] = [
+                'username'  => $game->users->first()->username ?? 'N/A',
+                'score'     => $scoreModel->score,
+                'timestamp' => $scoreModel->created_at,
+            ];
+        }
+    }
+
+    return response()->json(['scores' => $scores], 200);
+}
 
     public function store(Request $request, $slug)
     {
@@ -56,10 +51,10 @@ class ScoreController extends Controller
             }
 
             else {
-        foreach ($game as $game) {
+        foreach ($game as $g) {
                     $score = Score::create([
                         'user_id' => $user,
-                        'game_version_id' => $game->game_version->id,
+                        'game_version_id' => $g->game_version->id,
                         'score' => $request->score,
                     ]);
 

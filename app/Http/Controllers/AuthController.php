@@ -30,8 +30,10 @@ class AuthController extends Controller
                 $user = Auth::guard('web')->user();
 
                 if (in_array($user->username, ['dev1', 'dev2'])) {
-                    $token = $user->createToken('DevToken', ['dev'])->plainTextToken;
-
+                    $token = $user->createToken('DevToken')->plainTextToken;
+                    $user->update([
+                        'last_login_at' => now()
+                    ]);
                     DB::commit();
 
                     return response()->json([
@@ -41,6 +43,10 @@ class AuthController extends Controller
                 }
                 else {
                     $token = $user->createToken('UserToken')->plainTextToken;
+
+                    $user->update([
+                        'last_login_at' => now()
+                    ]);
 
                     DB::commit();
 
@@ -57,6 +63,10 @@ class AuthController extends Controller
 
                 DB::commit();
 
+                $admin->update([
+                    'last_login_at' => now()
+                ]);
+
                 return response()->json([
                      'status' => "success",
                     'token' => $token,
@@ -64,14 +74,14 @@ class AuthController extends Controller
             }
         }catch (ValidationException $e) {
             {
-                DB::rollback();
                 return response()->json([
                     'status' => 'invalid',
                     'message' => $e->errors()
                 ] , status: 401);
 
             }
-        }catch (\Exception $e) {
+        }
+        catch (\Exception $e) {
             DB::rollBack();
             Log::error("Login Failed: ". $e->getMessage());
             return response()->json(['error' => 'Failed to login' , 'message' => $e->getMessage()], 500);
@@ -85,10 +95,11 @@ class AuthController extends Controller
             if(!Auth::user()) {
                 throw new \Exception("User is not authenticated" , code: 401);
             }
-            Auth::user()->currentAccessToken()->delete();
 
+            Auth::user()->currentAccessToken()->delete();
             return response()->json(['success' => 'success'], 200);
         }
+
         catch (\Exception $e) {
            Log::error('Logout Failed' > $e->getMessage());
            return response()->json([
@@ -97,6 +108,8 @@ class AuthController extends Controller
            ], $e->getCode() ?: 500);
         }
     }
+
+
 
     public function  SignUp(Request $reqeuast)
     {
@@ -110,7 +123,7 @@ class AuthController extends Controller
 
         $user = User::create([
             'username' => $reqeuast->username,
-            'password' => $reqeuast->password
+            'password' => bcrypt($reqeuast->password),
         ]);
 
         $token = $user->createToken('tokens')->plainTextToken;
@@ -120,7 +133,7 @@ class AuthController extends Controller
         return response()->json([
             'status' => "success",
            'token' => $token,
-       ], 200);
+       ], 201);
        }
        catch (ValidationException $e) {
             DB::rollBack();

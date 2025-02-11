@@ -32,7 +32,6 @@ class AuthorMiddleware
         }
         $userId = Auth::guard('dev-api')->user()->id;
         $game = Game::where('created_by' , $userId)->exists();
-        // Lakukan pengecekan apakah token valid dan sesuai dengan guard 'admin-api'
         if (Auth::guard('dev-api')->check()) {
             if(!$game)
             {

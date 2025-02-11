@@ -10,6 +10,7 @@ class Game extends Model
 
     public function users()
     {
+
         return $this->belongsTo(User::class, 'created_by');
     }
     public function game_version()

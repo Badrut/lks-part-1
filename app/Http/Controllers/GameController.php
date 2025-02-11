@@ -20,26 +20,25 @@ class GameController extends Controller
         $game = Game::with('users','game_version.score')->orderBy($sortBy , $sortDir)->paginate($size,['*'] , 'page', $page);
         $data = [];
 
-
         $totalElements = count($game);
 
         try{
 
-        foreach ($game as $game)
+        foreach ($game as $g)
         {
-            $scoreCount = $game->game_version->score;
+            $scoreCount = $g->game_version->score;
 
 
 
             $data[] = [
-                'slug' => $game->slug,
-                'title' => $game->title,
-                'description' => $game->description,
-                'thumbnail' => '/games/'.$game->slug.'/'.$game->game_version->version.'/thumbnail.png',
-                'uploadTimestamp' => $game->updated_at,
-                'author' => $game->users->username,
-                'scoreCount'=> $scoreCount[0]->score,
-                'gamePath' => '/games/'.$game->slug.'/1/'
+                'slug' => $g->slug,
+                'title' => $g->title,
+                'description' => $g->description,
+                'thumbnail' => '/gs/'.$g->slug.'/'.$g->game_version->version.'/thumbnail.png',
+                'uploadTimestamp' => $g->updated_at,
+                'author' => $g->users->username,
+                'scoreCount'=> isset($scoreCount[0]) ? $scoreCount[0]->score : 0,
+                'gamePath' => '/games/'.$g->slug.'/1/'
             ]
         ;
     }
@@ -102,13 +101,21 @@ class GameController extends Controller
     public function show(Request $request, $slug)
     {
         try {
-            $game = Game::where('slug', $slug)->first();
+            $game = Game::where('slug', $slug)->with('game_version.score')->first();
 
-            if (!$game) {
-                return response()->json(['message' => 'Game not found'], 404);
-            }
+            $scoreCount = $game->game_version->score;
 
-            return response()->json(['game' => $game], 200);
+            return response()->json([
+                'slug' => $game->slug,
+                'title' => $game->title,
+                'description' => $game->description,
+                'thumbnail' => '/games/'.$game->slug.'/'.$game->game_version->version.'/thumbnail.png',
+                'uploadTimestamp' => $game->updated_at,
+                'author' => $game->users->username,
+                'scoreCount'=> isset($scoreCount[0]) ? $scoreCount[0]->score : 0,
+                'gamePath' => '/games/'.$game->slug.'/1/',
+
+            ], 200);
         }
         catch (ValidationException $e) {
             return response()->json(['error' => $e->errors()] , );
@@ -118,45 +125,39 @@ class GameController extends Controller
         }
     }
 
-    public function update(Request $request, $slug)
+        public function update(Request $request, $slug)
     {
-        $game = Game::where('slug' , $slug)->first();
+        // Cari game berdasarkan slug
+        $game = Game::where('slug', $slug)->first();
 
-        $request->validate([
-            'title' => 'required|min:3|max:60|unique:games,title,'.$game->id,
+        if (!$game) {
+            return response()->json(['error' => 'Game not found'], 404);
+        }
+
+        // Validasi request
+        $valid = $request->validate([
+            'title' => 'required|min:3|max:60|unique:games,title,' . $game->id,
             'description' => 'required|max:200',
         ]);
 
         try {
-            if(isset($game))
-                {
+            DB::beginTransaction();
 
-                    DB::beginTransaction();
+            // Update game
+            $game->update($valid);
 
-                    $valid = $request->validate([
-                        'title' => 'required|min:3|max:60',
-                        'description' => 'required|max:200',
-                    ]);
+            DB::commit();
 
-                    DB::commit();
-
-                    $game->update($valid);
-
-                    return response()->json(['status' => 'success']);
-
-                }
-        }catch(ValidationException $e)
-        {
+            return response()->json(['status' => 'success', 'game' => $game], 200);
+        } catch (ValidationException $e) {
             DB::rollBack();
             return response()->json(['error' => $e->errors()], 400);
-        }
-
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => $e->getMessage()], 400);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
 
     public function author(Request $request , $username)
     {
@@ -188,12 +189,21 @@ class GameController extends Controller
 
         }
 
-        return response()->json(['username' => $user->first()->username , 'registerTimestamp' => $user->first()->created_at ,  'authorGames' => $authorGames, 'highscores' => $highscores], 200);
+        return response()->json(['username' => $user->first()->username , 'registerTimestamp' => $user->first()->created_at ,  'authorGames' => $authorGames ?? null , 'highscores' => $highscores ?? null ], 200);
 
         if (!$user) {
             return response()->json(['message' => 'Game not found'], 404);
         }
 
-        return response()->json(['author' => $user], 200);
+        // return response()->json(['author' => $user], 200);
     }
+
+    // public function upload(Request $request)
+    // {
+    //     $request->validate([
+    //         'name' => 'required',
+    //     ]);
+
+
+    // }
 }

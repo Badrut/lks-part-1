@@ -17,12 +17,13 @@ class AdministratorController extends Controller
             $admin = Administrator::all();
             $totalElements = count($admin);
 
-        return response()->json(['totalElements' =>  $totalElements,'content' => $admin], 200);
+        return response()->json(['totalElements' =>  $totalElements, 'content' => $admin], 200);
         }
         catch (\Exception $e) {
             Log::error('Failed to fetch administrators' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
+
     }
 
     public function store(Request $reqeuast)
@@ -33,14 +34,10 @@ class AdministratorController extends Controller
             'password' => 'required|min:5',
         ]);
 
-        DB::beginTransaction();
-
         $user = User::create([
             'username' => $reqeuast->username,
             'password' => bcrypt($reqeuast->password),
         ]);
-
-        DB::commit();
 
         return response()->json(['status' => 'success' , 'username' => $user->username], 201);
       }
@@ -52,7 +49,6 @@ class AdministratorController extends Controller
             ] , 400);
       }
       catch (\Exception $e){
-        DB::rollback();
         Log::error("User creation failed :" . $e->getMessage());
         return response()->json(['error' => 'User creation failed'], 500);
       }
@@ -67,34 +63,31 @@ class AdministratorController extends Controller
             'password' => 'required|min:5',
         ]);
 
-        DB::beginTransaction();
 
         $user = User::findOrFail($id);
         $user->update($update);
 
-        DB::commit();
-
         return response()->json(['status' => 'success' , 'username' => $user->username], 201);
        }catch(ValidationException $e)
        {
-        DB::rollBack();
         return response()->json([
             'status' => 'invalid',
             'message' => 'Username already exists',
             ], 400);
        }catch(\Exception $e)
        {
-        DB::rollback();
         Log::error("User update failed :" . $e->getMessage());
         return response()->json(['error' => 'User update failed'], 500);
        }
     }
 
-    public function delete($id)
+
+    public function delete($username)
     {
 
+
         try{
-            $user = User::findOrFail($id);
+            $user = User::where('username' ,$username)->first();
             $user->delete();
 
             return response()->json(['message' => 'User deleted successfully'], 204);
@@ -104,5 +97,17 @@ class AdministratorController extends Controller
         }
     }
 
+    public function undelete($username)
+    {
+        try {
+            $user = User::withTrashed()->where('username', $username)->first();
+            $user->restore();
 
+            return response()->json(["message" => "user unblock successfully"]);
+        }
+        catch(\Exception $e)
+        {
+            return response()->json(["status" => "not found", "message" => "User not found"]);
+        }
+    }
 }
